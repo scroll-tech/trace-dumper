@@ -1,4 +1,4 @@
-FROM scrolltech/l2geth
+FROM scrolltech/l2geth:latest
 
 RUN mkdir -p /l2geth/keystore
 
