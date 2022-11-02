@@ -114,8 +114,7 @@ func NewAccounts(ctx context.Context, limit int, client *ethclient.Client, keyst
 	}
 	//setGasAndGaslimit(auth)
 
-	accounts := make([]*bind.TransactOpts, 0, len(privs))
-
+	var accounts []*bind.TransactOpts
 	for _, acc := range AddrPrivs {
 		acc, err := bind.NewKeyedTransactorWithChainID(acc.PrivateKey, chainid)
 		if err != nil {

@@ -3,29 +3,21 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"io"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
-	"github.com/scroll-tech/go-ethereum/core/types"
 	"github.com/scroll-tech/go-ethereum/ethclient"
 	"github.com/scroll-tech/go-ethereum/log"
-
+	"io"
+	"os"
 	"tool/accounts"
 	"tool/api"
-	"tool/rpc"
 )
 
 var (
 	endpoint = flag.String("endpoint", "ws://127.0.0.1:8546", "The endpoint to connect to blockchain node")
 	keystore = flag.String("keystore", "./docker/l2geth/genesis-keystore", "Keystore file path")
 	password = flag.String("password", "scrolltest", "The keystore password")
-	port     = flag.Int("port", 8190, "API server port")
-	limit    = flag.Int("limit", 5, "Useful internal accounts")
+	contract = flag.String("contract", "erc20", "e.g: erc20, nft, greeter, sushi, dao, uniswapv2")
 )
 
 func init() {
@@ -55,54 +47,35 @@ func main() {
 	}
 
 	// load keystore file
-	accounts, err := accounts.NewAccounts(ctx, *limit, client, *keystore, *password)
+	auths, err := accounts.NewAccounts(ctx, 2, client, *keystore, *password)
 	if err != nil {
 		log.Crit("failed to create accounts", "err", err)
 	}
+	root := auths.Root
+	auth := auths.GetAccount()
 
-	// create contracts factory
-	if err = api.NewFactory(accounts, client); err != nil {
-		panic("failed to create contract factory, err: " + err.Error())
+	solName := api.SolType(*contract)
+	switch solName {
+	case api.ERC20Name:
+		err = api.NewERC20(ctx, client, root, auth)
+	case api.NftName:
+		err = api.NewNft(ctx, client, root, auth)
+	case api.GreeterName:
+		err = api.NewGreeter(ctx, client, root)
+	case api.SushiName:
+		err = api.NewSushi(ctx, client, root)
+	case api.DaoName:
+		err = api.NewDao(ctx, client, root, auth)
+	case api.Uniswapv2Name:
+		err = api.NewUniswapv2(ctx, client, root, auth)
+	default:
+		log.Error("unexpected contract name")
+		return
 	}
 
-	// start rpc api
-	handler, err := rpc.RunServer(fmt.Sprintf("0.0.0.0:%d", *port))
 	if err != nil {
-		panic(err)
+		log.Error("deploy contract failed", "contract name", solName, "err", err)
+	} else {
+		log.Info("deploy contract successful", "contract name", solName)
 	}
-	defer handler.Close()
-
-	go loop(ctx, client)
-	daemon()
-}
-
-// Monitor batch execution results
-func loop(ctx context.Context, client *ethclient.Client) {
-	headCh := make(chan *types.Header, 8)
-	sub, err := client.SubscribeNewHead(ctx, headCh)
-	if err != nil {
-		log.Crit("Failed to subscribe new header", "err", err)
-	}
-	defer sub.Unsubscribe()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case head := <-headCh:
-			block, err := client.BlockByHash(ctx, head.Hash())
-			if err != nil {
-				log.Warn("Failed to get block", "err", err)
-			}
-			log.Info("New block", "number", block.NumberU64(), "blockHash", block.Hash().String(), "tx count", block.Transactions().Len())
-		}
-	}
-}
-
-func daemon() {
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigc)
-	<-sigc
 }

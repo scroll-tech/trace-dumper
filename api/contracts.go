@@ -2,320 +2,308 @@ package api
 
 import (
 	"context"
-	"math"
-	"math/big"
-	"strings"
-
+	"encoding/json"
 	"github.com/scroll-tech/go-ethereum/accounts/abi/bind"
 	"github.com/scroll-tech/go-ethereum/common"
-	"github.com/scroll-tech/go-ethereum/log"
-	"github.com/scroll-tech/go-ethereum/rpc"
-
+	"github.com/scroll-tech/go-ethereum/core/types"
+	"github.com/scroll-tech/go-ethereum/crypto"
+	"github.com/scroll-tech/go-ethereum/ethclient"
+	"math"
+	"math/big"
+	"math/rand"
+	"os"
 	"tool/contracts/dao"
 	"tool/contracts/erc20"
 	"tool/contracts/greeter"
-	"tool/contracts/native"
 	"tool/contracts/nft"
 	"tool/contracts/sushi"
 	"tool/contracts/uniswap/factory"
-	"tool/contracts/uniswap/multicall"
 	"tool/contracts/uniswap/router"
 	"tool/contracts/uniswap/weth9"
 	"tool/contracts/vote"
 	"tool/utils"
 )
 
-func (s *SolFactory) newNativectx(ctx context.Context) (*rpc.API, error) {
-	s.solNodes[NativeName] = common.Address{}
-	return &rpc.API{
-		Namespace: string(NativeName),
-		Service:   native.NewNative(ctx, s.accounts, s.client),
-		Public:    true,
-	}, nil
+func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.Transaction, file string) error {
+	// Wait tx mined.
+	if _, err := bind.WaitMined(ctx, client, tx); err != nil {
+		return err
+	}
+	header, err := client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return err
+	}
+	trace, err := client.GetBlockResultByNumber(ctx, header.Number)
+	if err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(trace, " ", "	")
+	if err != nil {
+		return err
+	}
+	// Write file
+	return os.WriteFile(file, data, 0644)
 }
 
-func (s *SolFactory) erc20Instance(ctx context.Context, solName SolType) (*rpc.API, error) {
-	token, err := erc20.NewERC20Token(ctx, strings.ToUpper(string(solName)), s.accounts, s.client, solName == ERC20Name)
+func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
+	_, tx, erc20Token, err := erc20.DeployERC20Template(root, client, root.From, root.From, "WETH coin", "WETH", 18)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	s.solNodes[solName] = token.Address
-	return &rpc.API{
-		Namespace: string(solName),
-		Service:   token,
-		Public:    true,
-	}, nil
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/erc20_deploy.json"); err != nil {
+		return err
+	}
+
+	tx, err = erc20Token.Mint(root, root.From, big.NewInt(1e4))
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/erc20_mint.json"); err != nil {
+		return err
+	}
+
+	// erc20 transfer
+	tx, err = erc20Token.Transfer(root, auth.From, big.NewInt(1000))
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/erc20_transfer.json"); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *SolFactory) newNFT(ctx context.Context) (*rpc.API, error) {
-	accs := s.accounts
-	client := s.client
-	auth := accs.GetAccount()
-	defer accs.SetAccount(auth)
-	addr, tx, token, err := nft.DeployERC721Mock(auth, client, "ERC721 coin", "ERC721")
+func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
+	_, tx, token, err := greeter.DeployGreeter(root, client, big.NewInt(10))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// Wait pending tx until it's deployed.
-	utils.WaitPendingTx(ctx, client, tx.Hash())
-	log.Info("Deploy nft successful", "address", addr.String())
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/greeter_deploy.json"); err != nil {
+		return err
+	}
 
-	s.solNodes[NftName] = addr
-	return &rpc.API{
-		Namespace: string(NftName),
-		Service: &nft.ERC721MockSession{
-			Contract:     token,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
+	tx, err = token.SetValue(root, big.NewInt(10))
+	if err != nil {
+		return err
+	}
+	return storeBlockResult(ctx, client, tx, "./tracedata/greeter_setValue.json")
 }
 
-func (s *SolFactory) newVote(ctx context.Context) (*rpc.API, error) {
-	auth := s.accounts.GetAccount()
-	defer s.accounts.SetAccount(auth)
-	// deploy vote
-	addr, voteTx, token, err := vote.DeployVotesMock(auth, s.client, "vote v2")
+func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
+	_, tx, token, err := nft.DeployERC721Mock(root, client, "ERC721 coin", "ERC721")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	utils.WaitPendingTx(ctx, s.client, voteTx.Hash())
-	log.Info("Deploy vote successful", "address", addr.String())
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/nft_deploy.json"); err != nil {
+		return err
+	}
 
-	s.solNodes[VoteName] = addr
-	return &rpc.API{
-		Namespace: string(VoteName),
-		Service: &vote.VotesMockSession{
-			Contract:     token,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
+	tokenId := big.NewInt(rand.Int63())
+	tx, err = token.Mint(root, root.From, tokenId)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/nft_mint.json"); err != nil {
+		return err
+	}
+
+	tx, err = token.TransferFrom(root, root.From, auth.From, tokenId)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/nft_transferFrom.json"); err != nil {
+		return err
+	}
+
+	tx, err = token.Burn(auth, tokenId)
+	if err != nil {
+		return err
+	}
+	return storeBlockResult(ctx, client, tx, "./tracedata/nft_burn.json")
 }
 
-func (s *SolFactory) newDao(ctx context.Context) (*rpc.API, error) {
-	auth := s.accounts.GetAccount()
-	defer s.accounts.SetAccount(auth)
-	// deploy vote
-	addr := s.solNodes[VoteName]
-
-	// deploy governor vote
-	addr, tx, token, err := dao.DeployGovernorMock(auth, s.client, "governor mock", addr, big.NewInt(1), big.NewInt(1), big.NewInt(100))
+func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
+	sushiAddr, tx, sushiToken, err := sushi.DeploySushiToken(root, client)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
-	log.Info("Deploy dao successful", "address", addr.String())
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_deploy.json"); err != nil {
+		return err
+	}
 
-	s.solNodes[DaoName] = addr
-	return &rpc.API{
-		Namespace: string(DaoName),
-		Service: &dao.GovernorMockSession{
-			Contract:     token,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
+	chefAddr, tx, chefToken, err := sushi.DeployMasterChef(root, client, sushiAddr, root.From, big.NewInt(1), big.NewInt(1), big.NewInt(math.MaxInt))
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_chef-deploy.json"); err != nil {
+		return err
+	}
+
+	amount := big.NewInt(1e18)
+	tx, err = sushiToken.Mint(root, root.From, amount)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_mint.json"); err != nil {
+		return err
+	}
+
+	allocPoint := utils.Ether
+	tx, err = chefToken.Add(root, allocPoint, sushiAddr, true)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_chef-add.json"); err != nil {
+		return err
+	}
+
+	pid, err := chefToken.PoolLength(&bind.CallOpts{Pending: true})
+	if err != nil {
+		return err
+	}
+	pid.Sub(pid, big.NewInt(1))
+	tx, err = chefToken.Set(root, pid, allocPoint, true)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_chef-set.json"); err != nil {
+		return err
+	}
+
+	tx, err = sushiToken.Approve(root, chefAddr, amount)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_approve.json"); err != nil {
+		return err
+	}
+
+	// deposit amount to chef
+	tx, err = chefToken.Deposit(root, pid, amount)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_chef-deposit.json"); err != nil {
+		return err
+	}
+
+	// change sushiToken's owner to masterChef.
+	tx, err = sushiToken.TransferOwnership(root, chefAddr)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_transferOwnership.json"); err != nil {
+		return err
+	}
+
+	// withdraw amount from chef
+	tx, err = chefToken.Withdraw(root, pid, amount)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/sushi_chef-withdraw.json"); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (s *SolFactory) newGreeter(ctx context.Context) (*rpc.API, error) {
-	auth := s.accounts.GetAccount()
-	defer s.accounts.SetAccount(auth)
-	// deploy greeter
-	addr, tx, token, err := greeter.DeployGreeter(auth, s.client, big.NewInt(10))
+func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
+	voteAddr, tx, _, err := vote.DeployVotesMock(root, client, "vote v2")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// Wait pending tx until it's deployed.
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
-	log.Info("Deploy greeter successful", "address", addr.String())
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/dao_deploy.json"); err != nil {
+		return err
+	}
 
-	s.solNodes[GreeterName] = addr
-	// return session
-	return &rpc.API{
-		Namespace: string(GreeterName),
-		Service: &greeter.GreeterSession{
-			Contract:     token,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
+	_, tx, daoToken, err := dao.DeployGovernorMock(root, client, "governor mock", voteAddr, big.NewInt(1), big.NewInt(1), big.NewInt(100))
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/dao_dao-deploy.json"); err != nil {
+		return err
+	}
+
+	callData := [][]byte{big.NewInt(1).Bytes()}
+	target := common.BigToAddress(big.NewInt(1))
+	value := big.NewInt(1)
+	description := "dao propose test"
+	tx, err = daoToken.Propose(root, []common.Address{target}, []*big.Int{value}, callData, description)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/dao_dao-Propose.json"); err != nil {
+		return err
+	}
+
+	salt := crypto.Keccak256Hash([]byte(description))
+	tx, err = daoToken.Cancel(root, []common.Address{target}, []*big.Int{value}, callData, salt)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/dao_dao-Cancel.json"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *SolFactory) newSushiToken(ctx context.Context) (*rpc.API, error) {
-	auth := s.accounts.GetAccount()
-	defer s.accounts.SetAccount(auth)
-	// deploy sushi
-	sushiAddr, tx, token, err := sushi.DeploySushiToken(auth, s.client)
+func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
+	wethAddr, tx, wToken, err := weth9.DeployWETH9(root, client)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
-
-	// change owner
-	tx, err = token.TransferOwnership(auth, s.accounts.Root.From)
-	if err != nil {
-		return nil, err
-	}
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
-	log.Debug("Change sushiToken owner to root account", "address", s.accounts.Root.From.String())
-
-	log.Info("Deploy sushiToken successful", "address", sushiAddr.String())
-
-	s.solNodes[SushiName] = sushiAddr
-	return &rpc.API{
-		Namespace: string(SushiName),
-		Service: &sushi.SushiTokenSession{
-			Contract:     token,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
-}
-
-func (s *SolFactory) newMasterChef(ctx context.Context) (*rpc.API, error) {
-	accs := s.accounts
-	client := s.client
-
-	auth := accs.GetAccount()
-	defer accs.SetAccount(auth)
-
-	sushiAddr := s.solNodes[SushiName]
-	addr, tx, chefToken, err := sushi.DeployMasterChef(auth, s.client, sushiAddr, auth.From, big.NewInt(1), big.NewInt(1), big.NewInt(math.MaxInt))
-	if err != nil {
-		return nil, err
-	}
-	// Wait pending tx until it's deployed.
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
-	log.Info("Deploy masterChef successful", "address", addr.String())
-
-	tx, err = chefToken.TransferOwnership(auth, accs.Root.From)
-	if err != nil {
-		return nil, err
-	}
-	utils.WaitPendingTx(ctx, client, tx.Hash())
-	log.Debug("Change chef owner to root account", "address", accs.Root.From.String())
-
-	s.solNodes[ChefName] = addr
-	// return session
-	return &rpc.API{
-		Namespace: string(ChefName),
-		Service: &sushi.MasterChefSession{
-			Contract:     chefToken,
-			TransactOpts: *auth,
-			CallOpts: bind.CallOpts{
-				Pending: true,
-				Context: ctx,
-			},
-		},
-		Public: true,
-	}, nil
-}
-
-func (s *SolFactory) newUniswap(ctx context.Context) (apis []rpc.API, err error) {
-	auth := s.accounts.GetAccount()
-	defer s.accounts.SetAccount(auth)
-
-	wethAddr, _, wToken, err := weth9.DeployWETH9(auth, s.client)
-	if err != nil {
-		return nil, err
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_weth9-deploy.json"); err != nil {
+		return err
 	}
 
 	// deploy factory
-	fAddr, _, fToken, err := factory.DeployUniswapV2Factory(auth, s.client, auth.From)
+	fAddr, tx, fToken, err := factory.DeployUniswapV2Factory(root, client, root.From)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_factory-deploy.json"); err != nil {
+		return err
 	}
 
 	// deploy router
-	rAddr, _, rToken, err := router.DeployUniswapV2Router02(auth, s.client, fAddr, wethAddr)
+	rAddr, tx, rToken, err := router.DeployUniswapV2Router02(root, client, fAddr, wethAddr)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_router02-deploy.json"); err != nil {
+		return err
 	}
 
-	// deploy multicall
-	mAddr, tx, mToken, err := multicall.DeployMulticall(auth, s.client)
+	btcAddr, tx, btcToken, err := erc20.DeployERC20Template(root, client, auth.From, auth.From, "BTC coin", "BTC", 18)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	utils.WaitPendingTx(ctx, s.client, tx.Hash())
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_btc-deploy.json"); err != nil {
+		return err
+	}
 
-	s.solNodes[WETHName] = wethAddr
-	s.solNodes[FactoryName] = fAddr
-	s.solNodes[RouterName] = rAddr
-	s.solNodes[MulticallName] = mAddr
-	apis = append(apis, []rpc.API{
-		{
-			Namespace: string(WETHName),
-			Service: &weth9.WETH9Session{
-				Contract:     wToken,
-				TransactOpts: *auth,
-				CallOpts: bind.CallOpts{
-					Pending: true,
-					Context: ctx,
-				},
-			},
-			Public: true,
-		},
-		{
-			Namespace: string(FactoryName),
-			Service: &factory.UniswapV2FactorySession{
-				Contract:     fToken,
-				TransactOpts: *auth,
-				CallOpts: bind.CallOpts{
-					Pending: true,
-					Context: ctx,
-				},
-			},
-			Public: true,
-		},
-		{
-			Namespace: string(RouterName),
-			Service: &router.UniswapV2Router02Session{
-				Contract:     rToken,
-				TransactOpts: *auth,
-				CallOpts: bind.CallOpts{
-					Pending: true,
-					Context: ctx,
-				},
-			},
-			Public: true,
-		},
-		{
-			Namespace: string(MulticallName),
-			Service: &multicall.MulticallSession{
-				Contract:     mToken,
-				TransactOpts: *auth,
-				CallOpts: bind.CallOpts{
-					Pending: true,
-					Context: ctx,
-				},
-			},
-			Public: true,
-		},
-	}...)
+	// init balance
+	auth.GasPrice = big.NewInt(1108583800)
+	auth.GasLimit = 11529000
+	originVal := big.NewInt(1).Mul(big.NewInt(3e3), utils.Ether)
+	tx, err = wToken.Deposit(auth)
+	tx, err = btcToken.Mint(auth, auth.From, originVal)
+	tx, err = wToken.Approve(auth, rAddr, originVal)
+	tx, err = btcToken.Approve(auth, rAddr, originVal)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_initBalance.json"); err != nil {
+		return err
+	}
 
-	log.Info("Deploy uniswapV2 successful", "address", rAddr.String())
+	// create pair
+	tx, err = fToken.CreatePair(root, wethAddr, btcAddr)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_factory-createPair.json"); err != nil {
+		return err
+	}
 
-	return apis, nil
+	// add liquidity, pool is 1:1
+	liqVal := big.NewInt(1).Mul(big.NewInt(1e3), utils.Ether)
+	tx, err = rToken.AddLiquidity(
+		auth,
+		wethAddr,
+		btcAddr,
+		liqVal,
+		liqVal,
+		big.NewInt(0),
+		big.NewInt(0),
+		auth.From,
+		big.NewInt(2e9),
+	)
+	if err = storeBlockResult(ctx, client, tx, "./tracedata/uniswapv2_router-AddLiquidity.json"); err != nil {
+		return err
+	}
+	return nil
 }
