@@ -1,7 +1,6 @@
 # l2gethTool
 
-Pressure test tool for L2GETH, can stress test contracts, ordinary transfer transactions. The L2GETH service and
-pressure test service are integrated.Subsequent Scroll services can also be integrated.
+A very simple l2geth tool, it can deploy contract and call contract api and get trace store into file just in one cmd.
 
 ## Update dependence
 
