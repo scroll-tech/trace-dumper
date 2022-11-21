@@ -11,11 +11,11 @@ go mod tidy
 
 ## make and start l2geth docker
 
-> Create a pressure test execution environment(scroll folder)
+> Create environment
 
 ```
 make docker
-docker run -it -p 8545:8545 -p 8546:8546 mask-pp/l2geth:latest
+docker run -it -p 8545:8545 -p 8546:8546 trace-dumper/l2geth:latest
 ```
 
 ## deploy contract
