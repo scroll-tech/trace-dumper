@@ -14,4 +14,4 @@ clean: ## Delete integration test environment
 	rm -r ${PWD}/scroll ${PWD}/bin/* 2>/dev/null
 
 docker: ## Build integration-test image
-	docker build -t mask-pp/${IMAGE_NAME}:${IMAGE_VERSION} ./docker/l2geth/.
+	docker build -t trace-dumper/${IMAGE_NAME}:${IMAGE_VERSION} ./docker/l2geth/.
