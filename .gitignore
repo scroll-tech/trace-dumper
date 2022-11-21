@@ -1,2 +1,2 @@
-./tracedata/*.json
+tracedata/*.json
 /bin/
