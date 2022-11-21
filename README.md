@@ -1,8 +1,8 @@
-# l2gethTool
+# trace-dumper
 
-A very simple l2geth tool, it can deploy contract and call contract api and get trace store into file just in one cmd.
+A very simple tool, it can deploy contract and call contract api and get trace store into file just in one cmd.
 
-## Update dependence
+## upgrade dependence
 
 ```
 go get -v github.com/scroll-tech/go-ethereum@staging
@@ -11,7 +11,7 @@ go mod tidy
 
 ## make and start l2geth docker
 
-> Create environment
+> Create environment (need to keep it running)
 
 ```
 make docker
