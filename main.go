@@ -17,7 +17,7 @@ var (
 	endpoint = flag.String("endpoint", "ws://127.0.0.1:8546", "The endpoint to connect to blockchain node")
 	keystore = flag.String("keystore", "./docker/l2geth/genesis-keystore", "Keystore file path")
 	password = flag.String("password", "scrolltest", "The keystore password")
-	contract = flag.String("contract", "erc20", "e.g: erc20, nft, greeter, sushi, dao, uniswapv2")
+	dump     = flag.String("dump", "erc20", "e.g: erc20, nft, greeter, sushi, dao, uniswapv2")
 )
 
 func init() {
@@ -54,7 +54,7 @@ func main() {
 	root := auths.Root
 	auth := auths.GetAccount()
 
-	solName := api.SolType(*contract)
+	solName := api.SolType(*dump)
 	switch solName {
 	case api.ERC20Name:
 		err = api.NewERC20(ctx, client, root, auth)
@@ -69,13 +69,13 @@ func main() {
 	case api.Uniswapv2Name:
 		err = api.NewUniswapv2(ctx, client, root, auth)
 	default:
-		log.Error("unexpected contract name")
+		log.Error("unexpected dump option")
 		return
 	}
 
 	if err != nil {
-		log.Error("deploy contract failed", "contract name", solName, "err", err)
+		log.Error("dump traces for contract fail", "contract name", solName, "err", err)
 	} else {
-		log.Info("deploy contract successful", "contract name", solName)
+		log.Info("dump traces for contract successfully", "contract name", solName)
 	}
 }

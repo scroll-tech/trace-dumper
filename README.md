@@ -18,14 +18,14 @@ make docker
 docker run -it -p 8545:8545 -p 8546:8546 trace-dumper/l2geth:latest
 ```
 
-## deploy contract
+## dump traces
 
 > the contract supports: erc20, nft, greeter, sushi, dao, uniswapv2
 
 ```
-make l2gethTool
-./bin/l2gethTool --help
-./bin/l2gethTool -contract erc20
+make trace_dumper
+./bin/trace_dumper --help
+./bin/trace_dumper -dump erc20
 ```
 
 ## show trace list
