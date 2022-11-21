@@ -4,10 +4,15 @@ A very simple tool, it can deploy contract and call contract api and get trace s
 
 ## upgrade dependence
 
+1. upgrade go mod
 ```
 go get -v github.com/scroll-tech/go-ethereum@staging
 go mod tidy
 ```
+
+2. manaully edit `scrolltech/l2geth`'s tag in `docker/l2geth/Dockerfile` to the corresponding version
+
+For example, `scrolltech/l2geth:prealpha-v3.1`
 
 ## make and start l2geth docker
 
