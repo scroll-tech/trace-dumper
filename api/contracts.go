@@ -35,7 +35,7 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 	if err != nil {
 		return err
 	}
-	trace, err := client.GetBlockResultByNumber(ctx, header.Number)
+	trace, err := client.GetBlockTraceByNumber(ctx, header.Number)
 	if err != nil {
 		return err
 	}
