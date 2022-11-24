@@ -28,7 +28,7 @@ docker run -it -p 8545:8545 -p 8546:8546 trace-dumper/l2geth:latest
 ```
 make trace_dumper
 ./bin/trace_dumper --help
-./bin/trace_dumper -dump erc20 # options: erc20, nft, greeter, sushi, dao, uniswapv2
+./bin/trace_dumper -dump erc20 # options: native, erc20, nft, greeter, sushi, dao, uniswapv2
 ```
 
 ## show trace list

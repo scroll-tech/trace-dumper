@@ -3,15 +3,18 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"math"
+	"math/big"
+	"math/rand"
+	"os"
+
 	"github.com/scroll-tech/go-ethereum/accounts/abi/bind"
 	"github.com/scroll-tech/go-ethereum/common"
 	"github.com/scroll-tech/go-ethereum/core/types"
 	"github.com/scroll-tech/go-ethereum/crypto"
 	"github.com/scroll-tech/go-ethereum/ethclient"
-	"math"
-	"math/big"
-	"math/rand"
-	"os"
+
+	"tool/accounts"
 	"tool/contracts/dao"
 	"tool/contracts/erc20"
 	"tool/contracts/greeter"
@@ -47,6 +50,17 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 	return os.WriteFile(TRACEDATA_DIR_PREFIX+file, data, 0644)
 }
 
+func Native(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts, to common.Address, value *big.Int) error {
+	tx, err := accounts.CreateSignedTx(client, root, &to, value, nil)
+	if err != nil {
+		return err
+	}
+	if err = client.SendTransaction(ctx, tx); err != nil {
+		return err
+	}
+	return storeBlockResult(ctx, client, tx, "native_transfer.json")
+}
+
 func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
 	_, tx, erc20Token, err := erc20.DeployERC20Template(root, client, root.From, root.From, "WETH coin", "WETH", 18)
 	if err != nil {
@@ -69,10 +83,19 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "erc20_transfer.json"); err != nil {
+	if err = storeBlockResult(ctx, client, tx, "erc20_1_transfer.json"); err != nil {
 		return err
 	}
-	return nil
+
+	for i := 0; i < 10; i++ {
+		// erc20 transfer
+		tx, err = erc20Token.Transfer(root, auth.From, big.NewInt(1000))
+		if err != nil {
+			return err
+		}
+	}
+
+	return storeBlockResult(ctx, client, tx, "erc20_10_transfer.json")
 }
 
 func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
@@ -261,7 +284,7 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_router02-deploy.json"); err != nil {
+	if err = storeBlockResult(ctx, client, tx, "uniswapv2_router-deploy.json"); err != nil {
 		return err
 	}
 
@@ -307,5 +330,25 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	if err = storeBlockResult(ctx, client, tx, "uniswapv2_router-AddLiquidity.json"); err != nil {
 		return err
 	}
-	return nil
+
+	header, err := client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// swap weth => btc
+	swapVal := utils.Ether
+	tx, err = rToken.SwapExactTokensForTokens(
+		auth,
+		swapVal,
+		big.NewInt(0),
+		[]common.Address{wethAddr, btcAddr},
+		auth.From,
+		big.NewInt(int64(header.Time)*2),
+	)
+	if err != nil {
+		return err
+	}
+
+	return storeBlockResult(ctx, client, tx, "uniswapv2_router-swapExactTokensForTokens.json")
 }

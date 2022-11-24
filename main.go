@@ -8,6 +8,7 @@ import (
 	"github.com/scroll-tech/go-ethereum/ethclient"
 	"github.com/scroll-tech/go-ethereum/log"
 	"io"
+	"math/big"
 	"os"
 	"tool/accounts"
 	"tool/api"
@@ -56,6 +57,8 @@ func main() {
 
 	solName := api.SolType(*dump)
 	switch solName {
+	case api.NativeName:
+		err = api.Native(ctx, client, root, auth.From, big.NewInt(100))
 	case api.ERC20Name:
 		err = api.NewERC20(ctx, client, root, auth)
 	case api.NftName:
