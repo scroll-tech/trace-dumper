@@ -20,7 +20,7 @@ create environment (**need to keep it running**)
 
 ```
 make docker
-docker run -it -p 8545:8545 -p 8546:8546 trace-dumper/l2geth:latest
+docker run -it -p 8545:8545 -p 8546:8546 --rm trace-dumper/l2geth:latest
 ```
 
 ## dump traces
