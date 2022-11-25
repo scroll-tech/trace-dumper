@@ -3,15 +3,17 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"math"
+	"math/big"
+	"math/rand"
+	"os"
+
 	"github.com/scroll-tech/go-ethereum/accounts/abi/bind"
 	"github.com/scroll-tech/go-ethereum/common"
 	"github.com/scroll-tech/go-ethereum/core/types"
 	"github.com/scroll-tech/go-ethereum/crypto"
 	"github.com/scroll-tech/go-ethereum/ethclient"
-	"math"
-	"math/big"
-	"math/rand"
-	"os"
+
 	"tool/contracts/dao"
 	"tool/contracts/erc20"
 	"tool/contracts/greeter"
@@ -23,6 +25,16 @@ import (
 	"tool/contracts/vote"
 	"tool/utils"
 )
+
+var (
+	WrapJson bool
+)
+
+type jsonrpcMessage struct {
+	Version string          `json:"jsonrpc,omitempty"`
+	ID      int             `json:"id,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+}
 
 const TRACEDATA_DIR_PREFIX = "./tracedata/"
 
@@ -43,6 +55,20 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 	if err != nil {
 		return err
 	}
+
+	if WrapJson {
+		wrapData := json.RawMessage(data)
+		var wrapJson = &jsonrpcMessage{
+			Version: "2.0",
+			ID:      1,
+			Result:  wrapData,
+		}
+		data, err = json.MarshalIndent(wrapJson, " ", "	")
+		if err != nil {
+			return err
+		}
+	}
+
 	// Write file
 	return os.WriteFile(TRACEDATA_DIR_PREFIX+file, data, 0644)
 }
