@@ -27,6 +27,16 @@ import (
 	"tool/utils"
 )
 
+var (
+	WrapJson bool
+)
+
+type jsonrpcMessage struct {
+	Version string          `json:"jsonrpc,omitempty"`
+	ID      int             `json:"id,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+}
+
 const TRACEDATA_DIR_PREFIX = "./tracedata/"
 
 func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.Transaction, file string) error {
@@ -46,6 +56,20 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 	if err != nil {
 		return err
 	}
+
+	if WrapJson {
+		wrapData := json.RawMessage(data)
+		var wrapJson = &jsonrpcMessage{
+			Version: "2.0",
+			ID:      1,
+			Result:  wrapData,
+		}
+		data, err = json.MarshalIndent(wrapJson, " ", "	")
+		if err != nil {
+			return err
+		}
+	}
+
 	// Write file
 	return os.WriteFile(TRACEDATA_DIR_PREFIX+file, data, 0644)
 }
