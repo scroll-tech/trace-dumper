@@ -162,7 +162,7 @@ func (a *Accounts) checkAccounts(ctx context.Context) {
 				value = minBalance
 				err   error
 			)
-			tx, err = a.createSignedTx(&acc.From, value)
+			tx, err = CreateSignedTx(a.client, a.Root, &acc.From, value, nil)
 			if err != nil {
 				log.Error("failed to create tx", "err", err)
 				continue
@@ -183,23 +183,24 @@ func (a *Accounts) checkAccounts(ctx context.Context) {
 	}
 }
 
-func (a *Accounts) createSignedTx(to *common.Address, value *big.Int) (*types.Transaction, error) {
-	nonce, err := a.client.PendingNonceAt(context.Background(), a.Root.From)
+func CreateSignedTx(client *ethclient.Client, auth *bind.TransactOpts, to *common.Address, value *big.Int, data []byte) (*types.Transaction, error) {
+	nonce, err := client.PendingNonceAt(context.Background(), auth.From)
 	if err != nil {
 		return nil, err
 	}
-	gasPrice, err := a.client.SuggestGasPrice(context.Background())
+	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	tx := types.NewTx(&types.LegacyTx{
 		Nonce:    nonce,
 		To:       to,
+		Data:     data,
 		Value:    value,
 		Gas:      500000,
 		GasPrice: gasPrice,
 	})
-	signedTx, err := a.Root.Signer(a.Root.From, tx)
+	signedTx, err := auth.Signer(auth.From, tx)
 	if err != nil {
 		return nil, err
 	}
