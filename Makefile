@@ -8,8 +8,7 @@ trace_dumper: ## Builds the trace_dumper instance.
 	go build -o ${PWD}/bin/trace_dumper
 
 clean: ## Delete generated artifacts
-	rm -r ${PWD}/bin/*
-	rm -r ${PWD}/tracedata/*.json
+	rm -r ${PWD}/bin/* ${PWD}/tracedata/*.json
 
 docker: ## Build integration-test image
 	docker build -t trace-dumper/${IMAGE_NAME}:${IMAGE_VERSION} ./docker/l2geth/.
