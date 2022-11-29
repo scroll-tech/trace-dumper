@@ -52,7 +52,7 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 	if err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(trace, " ", "	")
+	data, err := json.MarshalIndent(trace, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.T
 			ID:      1,
 			Result:  wrapData,
 		}
-		data, err = json.MarshalIndent(wrapJson, " ", "	")
+		data, err = json.MarshalIndent(wrapJson, "", "    ")
 		if err != nil {
 			return err
 		}
