@@ -2,16 +2,21 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"flag"
+	"fmt"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
+	"github.com/scroll-tech/go-ethereum/accounts/abi/bind"
+	"github.com/scroll-tech/go-ethereum/common"
+	"github.com/scroll-tech/go-ethereum/crypto"
 	"github.com/scroll-tech/go-ethereum/ethclient"
 	"github.com/scroll-tech/go-ethereum/log"
 	"io"
 	"math/big"
 	"os"
-	"tool/accounts"
-	"tool/api"
+	"time"
+	"tool/contracts/uniswap/router"
 )
 
 var (
@@ -37,7 +42,7 @@ func init() {
 
 func main() {
 	// Parse the flags and set up the logger to print everything requested
-	flag.Parse()
+	/*flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -84,5 +89,65 @@ func main() {
 		log.Error("dump traces for contract fail", "contract name", solName, "err", err)
 	} else {
 		log.Info("dump traces for contract successfully", "contract name", solName)
+	}*/
+	test()
+}
+
+func test() {
+	l2url := "https://prealpha.scroll.io/l2"
+	usdcAddr := common.HexToAddress("0x5bD45286170BA4EC157d5F501231E8367C31877a")
+	usdtAddr := common.HexToAddress("0xD1457fbe8F34E112A2948F3d1749AfBbdC7FBF98")
+
+	priv := "xss"
+
+	privateKey, _ := crypto.HexToECDSA(priv)
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+	from := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	for i := 0; ; i++ {
+		l2client, _ := ethclient.Dial(l2url)
+		l2chainId, _ := l2client.ChainID(context.Background())
+
+		l2nonce, _ := l2client.PendingNonceAt(context.Background(), from)
+		fmt.Printf("l2nonce:%v\n", l2nonce)
+
+		routerAddr := common.HexToAddress("0xee0e03c1a621084ca3c542f36e4a5d0230304471") //common.HexToAddress("0x4F4Eb5aC461c115191390D1760109F1EA185e609")
+		router, _ := router.NewIUniswapV2Router02(routerAddr, l2client)
+
+		transOpt, _ := bind.NewKeyedTransactorWithChainID(privateKey, l2chainId)
+		transOpt.Nonce = big.NewInt(int64(l2nonce))
+
+		amount := big.NewInt(1e18)
+
+		path1 := make([]common.Address, 2)
+		path1[0] = usdtAddr
+		path1[1] = usdcAddr
+
+		transOpt.Nonce = big.NewInt(int64(l2nonce))
+		tx1, err := router.SwapExactTokensForTokens(transOpt, amount, big.NewInt(0), path1, from, amount)
+		if err == nil {
+			fmt.Printf("%v swap usdt to usdc:%v\n", i, tx1.Hash())
+		} else {
+			fmt.Printf("%v swap usdt to usdc, err:%v\n", i, err)
+		}
+
+		path2 := make([]common.Address, 2)
+		path2[0] = usdcAddr
+		path2[1] = usdtAddr
+
+		receipt, err := bind.WaitMined(context.Background(), l2client, tx1)
+
+		time.Sleep(4 * time.Second)
+
+		transOpt.Nonce = big.NewInt(int64(l2nonce + 1))
+		tx2, err := router.SwapExactTokensForTokens(transOpt, amount, big.NewInt(0), path2, from, amount)
+		if err == nil {
+			fmt.Printf("%v swap usdc to usdt:%v\n", i, tx2.Hash())
+		} else {
+			fmt.Printf("%v swap usdc to usdt, err:%v\n", i, err)
+		}
+
+		time.Sleep(10 * time.Second)
 	}
 }
