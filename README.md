@@ -7,7 +7,7 @@ A very simple tool, it can deploy contract and call contract api and get trace s
 1. upgrade go mod
 
 ```
-go get -v github.com/scroll-tech/go-ethereum@staging // change `staging` to a specific tag/branch here
+go get -v github.com/scroll-tech/go-ethereum@develop // change `develop` to a specific tag/branch here
 go mod tidy
 ```
 
