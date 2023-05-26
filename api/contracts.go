@@ -236,8 +236,13 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 		return err
 	}
 
+	res, err := chefToken.UserInfo(nil, pid, root.From)
+	if err != nil {
+		return err
+	}
+
 	// withdraw amount from chef
-	tx, err = chefToken.Withdraw(root, pid, amount)
+	tx, err = chefToken.Withdraw(root, pid, res.Amount)
 	if err = storeBlockResult(ctx, client, tx, "sushi_chef-withdraw.json"); err != nil {
 		return err
 	}
@@ -322,7 +327,7 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 
 	// init balance
 	auth.GasPrice = big.NewInt(1108583800)
-	auth.GasLimit = 11529000
+	auth.GasLimit = 1152900
 	originVal := big.NewInt(1).Mul(big.NewInt(3e3), utils.Ether)
 	tx, err = wToken.Deposit(auth)
 	tx, err = btcToken.Mint(auth, auth.From, originVal)
