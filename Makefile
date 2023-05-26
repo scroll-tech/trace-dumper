@@ -1,7 +1,10 @@
-.PHONY: trace_dumper geth clean docker
+.PHONY: update trace_dumper geth clean docker
 
 IMAGE_NAME=l2geth
 IMAGE_VERSION=latest
+
+update: ## Let's keep it and docker version in consistent.
+	go get -u github.com/scroll-tech/go-ethereum@scroll-v3.3.1
 
 trace_dumper: ## Builds the trace_dumper instance.
 	mkdir -p ${PWD}/bin
