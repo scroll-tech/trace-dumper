@@ -38,4 +38,7 @@ const (
 	FactoryName   = SolType("factory")
 	RouterName    = SolType("router")
 	MulticallName = SolType("multicall")
+
+	// Scroll contracts
+	ScrollName = SolType("scroll")
 )

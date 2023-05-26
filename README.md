@@ -13,7 +13,7 @@ go mod tidy
 
 2. manaully edit `scrolltech/l2geth`'s tag in `docker/l2geth/Dockerfile` to the corresponding version
 
-For example, `scrolltech/l2geth:prealpha-v3.1`
+For example, `scrolltech/l2geth:scroll-v3.2.4`
 
 ## make and start l2geth docker
 
@@ -21,7 +21,8 @@ create environment (**need to keep it running**)
 
 ```
 make docker
-docker run -it -p 8545:8545 -p 8546:8546 --rm trace-dumper/l2geth:latest
+make start-l1geth
+make start-l2geth
 ```
 
 ## dump traces
