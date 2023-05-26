@@ -376,3 +376,7 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 
 	return storeBlockResult(ctx, client, tx, "uniswapv2_router-swapExactTokensForTokens.json")
 }
+
+func NewScrollContracts(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts){
+
+}
