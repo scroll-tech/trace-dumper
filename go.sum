@@ -71,6 +71,8 @@ github.com/prometheus/tsdb v0.7.1 h1:YZcsG11NqnK4czYLrWd9mpEuAJIHVQLwdrleYfszMAA
 github.com/rjeczalik/notify v0.9.1 h1:CLCKso/QK1snAlnhNR/CNvNiFU2saUtjV0bx3EwNeCE=
 github.com/rjeczalik/notify v0.9.1/go.mod h1:rKwnCoCGeuQnwBtTSPL9Dad03Vh2n40ePRrjvIXnJho=
 github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=
+github.com/scroll-tech/go-ethereum v1.10.14-0.20230508165858-27a3830afa61 h1:4fslVpNOPLeJPYX3tivrVWgqNvChPs7/y9OqWvQSNCw=
+github.com/scroll-tech/go-ethereum v1.10.14-0.20230508165858-27a3830afa61/go.mod h1:45PZqlQCqV0dU4o4+SE8LoJLEvXkK5j45ligvbih9QY=
 github.com/scroll-tech/go-ethereum v1.10.14-0.20230522072449-149419cf09eb h1:rg00TtBDBtPaCDoUPQ+2Pj5xw/8YQfYXz2aMUG/i+3s=
 github.com/scroll-tech/go-ethereum v1.10.14-0.20230522072449-149419cf09eb/go.mod h1:45PZqlQCqV0dU4o4+SE8LoJLEvXkK5j45ligvbih9QY=
 github.com/scroll-tech/go-ethereum v1.10.14-0.20230524121042-060815e901c3 h1:eB7a1K34lmdgKo1W6rEFCmIYvCgfiGro4moi4pgpoak=
