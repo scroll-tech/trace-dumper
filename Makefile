@@ -1,7 +1,7 @@
 .PHONY: update trace_dumper geth clean docker start_docker
 
 update: ## Let's keep it and docker version in consistent.
-	go get -u github.com/scroll-tech/go-ethereum@scroll-v3.1.12
+	go get -u github.com/scroll-tech/go-ethereum@scroll-v3.3.1
 
 trace_dumper: ## Builds the trace_dumper instance.
 	mkdir -p ${PWD}/bin
