@@ -87,8 +87,12 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, file string
 			}
 		}
 
+		name := fmt.Sprintf("%s/%s_%d.json", TRACEDATA_DIR_PREFIX, file, number)
+		if len(numberList) == 1 {
+			name = fmt.Sprintf("%s/%s.json", TRACEDATA_DIR_PREFIX, file)
+		}
 		// Write file
-		if err = os.WriteFile(fmt.Sprintf("%s/%s_%d.json", TRACEDATA_DIR_PREFIX, file, number), data, 0600); err != nil {
+		if err = os.WriteFile(name, data, 0600); err != nil {
 			return err
 		}
 	}
