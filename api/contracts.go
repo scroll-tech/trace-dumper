@@ -138,7 +138,7 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 	}
 
 	path := TRACEDATA_DIR_PREFIX + "erc20/"
-	if err = storeBlockResultsForTxs(ctx, client, path, "erc20_deploy", tx); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, path, "deploy", tx); err != nil {
 		return err
 	}
 
