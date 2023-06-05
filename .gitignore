@@ -1,3 +1,4 @@
 tracedata/*.json
 /bin/
+tracedata/*
 .idea
