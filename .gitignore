@@ -1,4 +1,3 @@
-tracedata/*.json
+tracedata/*/*.json
 /bin/
-tracedata/*
 .idea
