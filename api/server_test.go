@@ -41,7 +41,7 @@ func TestAPI(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func storeBlockResult(ctx context.Context, client *ethclient.Client, name string) error {
+func storeBlockResultsForTxs(ctx context.Context, client *ethclient.Client, name string) error {
 	header, err := client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func storeBlockResult(ctx context.Context, client *ethclient.Client, name string
 	return os.WriteFile(name, data, os.ModePerm)
 }
 
-func TestStoreBlockResults(t *testing.T) {
+func TeststoreBlockResultsForTxss(t *testing.T) {
 	ctx := context.Background()
 	assert := assert.New(t)
 
@@ -82,7 +82,7 @@ func TestStoreBlockResults(t *testing.T) {
 	tx, err := daoToken.Cancel(auth, []common.Address{auth2.From}, []*big.Int{big.NewInt(1)}, [][]byte{}, common.Hash{})
 	assert.NoError(err)
 	utils.WaitPendingTx(ctx, client, tx.Hash())
-	assert.NoError(storeBlockResult(ctx, client, "/tmp/dao.json"))
+	assert.NoError(storeBlockResultsForTxs(ctx, client, "/tmp/dao.json"))
 
 	// get nft trace
 	nftToken, err := nft.NewERC721Mock(modules[NftName], client)
@@ -93,7 +93,7 @@ func TestStoreBlockResults(t *testing.T) {
 	assert.NoError(err)
 	tx, err = nftToken.Burn(auth, big.NewInt(1))
 	utils.WaitPendingTx(ctx, client, tx.Hash())
-	assert.NoError(storeBlockResult(ctx, client, "/tmp/nft.json"))
+	assert.NoError(storeBlockResultsForTxs(ctx, client, "/tmp/nft.json"))
 
 	// get sushi trace
 	masterChef, err := sushi.NewMasterChef(modules[ChefName], client)
@@ -110,5 +110,5 @@ func TestStoreBlockResults(t *testing.T) {
 	assert.NoError(err)
 	tx, err = masterChef.Withdraw(auth, pid, big.NewInt(1))
 	utils.WaitPendingTx(ctx, client, tx.Hash())
-	assert.NoError(storeBlockResult(ctx, client, "/tmp/sushi.json"))
+	assert.NoError(storeBlockResultsForTxs(ctx, client, "/tmp/sushi.json"))
 }
