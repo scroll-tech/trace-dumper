@@ -8,10 +8,17 @@ trace_dumper: ## Builds the trace_dumper instance.
 	go build -o ${PWD}/bin/trace_dumper
 
 clean: ## Delete generated artifacts
-	rm -r ${PWD}/bin/* ${PWD}/tracedata/*.json
+	rm -rf ${PWD}/bin/* \
+	${PWD}/tracedata/dao \
+	${PWD}/tracedata/erc20 \
+	${PWD}/tracedata/greeter \
+	${PWD}/tracedata/native \
+	${PWD}/tracedata/nft \
+	${PWD}/tracedata/sushi \
+	${PWD}/tracedata/uniswapv2
 
 start_docker:
-	docker run --rm -p 8545:8545 -p 8546:8546 trace-dumper
+	docker run --rm -p 8545:8545 -p 8546:8546 trace-dumper/l2geth
 
 docker: ## Build integration-test image
 	docker build --no-cache -t trace-dumper/l2geth:latest ./docker/l2geth/.

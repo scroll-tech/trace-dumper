@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/scroll-tech/go-ethereum/common"
@@ -30,4 +31,15 @@ func MinInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
