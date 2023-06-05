@@ -1,7 +1,7 @@
-./erc20/*.json
-./uniswapv2/*.json
-./dao/*.json
-./greeter/*.json
-./sushi/*.json
-./native/*.json
-./nft/*.json
+erc20
+uniswapv2
+dao
+greeter
+sushi
+native
+nft
