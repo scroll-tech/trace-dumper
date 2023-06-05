@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"math/rand"
@@ -13,6 +15,7 @@ import (
 	"github.com/scroll-tech/go-ethereum/core/types"
 	"github.com/scroll-tech/go-ethereum/crypto"
 	"github.com/scroll-tech/go-ethereum/ethclient"
+	"github.com/scroll-tech/go-ethereum/log"
 
 	"tool/accounts"
 	"tool/contracts/dao"
@@ -37,41 +40,77 @@ type jsonrpcMessage struct {
 	Result  json.RawMessage `json:"result,omitempty"`
 }
 
-const TRACEDATA_DIR_PREFIX = "./tracedata/"
+const TRACEDATA_DIR_PREFIX = "./tracedata"
 
-func storeBlockResult(ctx context.Context, client *ethclient.Client, tx *types.Transaction, file string) error {
+func storeBlockResultsForTxs(ctx context.Context, client *ethclient.Client, file string, txs ...*types.Transaction) error {
+	numberList, err := getTxsBlockNumbers(ctx, client, file, txs...)
+	if err != nil {
+		return err
+	}
+
+	return storeBlockResultsForBlocks(ctx, client, file, numberList)
+}
+
+func getTxsBlockNumbers(ctx context.Context, client *ethclient.Client, file string, txs ...*types.Transaction) ([]*big.Int, error) {
 	// Wait tx mined.
-	if _, err := bind.WaitMined(ctx, client, tx); err != nil {
-		return err
-	}
-	header, err := client.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return err
-	}
-	trace, err := client.GetBlockTraceByNumber(ctx, header.Number)
-	if err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(trace, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	if WrapJson {
-		wrapData := json.RawMessage(data)
-		var wrapJson = &jsonrpcMessage{
-			Version: "2.0",
-			ID:      1,
-			Result:  wrapData,
-		}
-		data, err = json.MarshalIndent(wrapJson, "", "    ")
+	var (
+		preNumber  *big.Int
+		numberList []*big.Int
+	)
+	for _, tx := range txs {
+		receipt, err := bind.WaitMined(ctx, client, tx)
 		if err != nil {
+			return nil, err
+		}
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return nil, errors.New("receipt status is fail")
+		}
+		if preNumber != nil && preNumber.Uint64() == receipt.BlockNumber.Uint64() {
+			continue
+		}
+		preNumber = receipt.BlockNumber
+		numberList = append(numberList, receipt.BlockNumber)
+
+		log.Info(file, "number", receipt.BlockNumber.Uint64(), "txHash", tx.Hash().String())
+	}
+	return numberList, nil
+}
+
+func storeBlockResultsForBlocks(ctx context.Context, client *ethclient.Client, file string, numberList []*big.Int) error {
+	for _, number := range numberList {
+		trace, err := client.GetBlockTraceByNumber(ctx, number)
+		if err != nil {
+			return err
+		}
+		data, err := json.MarshalIndent(trace, "", "    ")
+		if err != nil {
+			return err
+		}
+
+		if WrapJson {
+			wrapData := json.RawMessage(data)
+			var wrapJson = &jsonrpcMessage{
+				Version: "2.0",
+				ID:      1,
+				Result:  wrapData,
+			}
+			data, err = json.MarshalIndent(wrapJson, "", "    ")
+			if err != nil {
+				return err
+			}
+		}
+
+		name := fmt.Sprintf("%s/%s_%d.json", TRACEDATA_DIR_PREFIX, file, number)
+		if len(numberList) == 1 {
+			name = fmt.Sprintf("%s/%s.json", TRACEDATA_DIR_PREFIX, file)
+		}
+		// Write file
+		if err = os.WriteFile(name, data, 0600); err != nil {
 			return err
 		}
 	}
 
-	// Write file
-	return os.WriteFile(TRACEDATA_DIR_PREFIX+file, data, 0644)
+	return nil
 }
 
 func Native(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts, to common.Address, value *big.Int) error {
@@ -82,7 +121,7 @@ func Native(ctx context.Context, client *ethclient.Client, root *bind.TransactOp
 	if err = client.SendTransaction(ctx, tx); err != nil {
 		return err
 	}
-	return storeBlockResult(ctx, client, tx, "native_transfer.json")
+	return storeBlockResultsForTxs(ctx, client, "native_transfer", tx)
 }
 
 func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
@@ -90,7 +129,7 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "erc20_deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "erc20_deploy", tx); err != nil {
 		return err
 	}
 
@@ -98,7 +137,7 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "erc20_mint.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "erc20_mint", tx); err != nil {
 		return err
 	}
 
@@ -107,7 +146,7 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "erc20_1_transfer.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "erc20_1_transfer", tx); err != nil {
 		return err
 	}
 
@@ -119,7 +158,7 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 		}
 	}
 
-	return storeBlockResult(ctx, client, tx, "erc20_10_transfer.json")
+	return storeBlockResultsForTxs(ctx, client, "erc20_10_transfer", tx)
 }
 
 func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
@@ -127,7 +166,7 @@ func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.Transa
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "greeter_deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "greeter_deploy", tx); err != nil {
 		return err
 	}
 
@@ -135,7 +174,7 @@ func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.Transa
 	if err != nil {
 		return err
 	}
-	return storeBlockResult(ctx, client, tx, "greeter_setValue.json")
+	return storeBlockResultsForTxs(ctx, client, "greeter_setValue", tx)
 }
 
 func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
@@ -143,7 +182,7 @@ func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "nft_deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "nft_deploy", tx); err != nil {
 		return err
 	}
 
@@ -152,7 +191,7 @@ func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "nft_mint.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "nft_mint", tx); err != nil {
 		return err
 	}
 
@@ -160,7 +199,7 @@ func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "nft_transferFrom.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "nft_transferFrom", tx); err != nil {
 		return err
 	}
 
@@ -168,7 +207,7 @@ func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	return storeBlockResult(ctx, client, tx, "nft_burn.json")
+	return storeBlockResultsForTxs(ctx, client, "nft_burn", tx)
 }
 
 func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
@@ -176,7 +215,7 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "sushi_deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_deploy", tx); err != nil {
 		return err
 	}
 
@@ -184,7 +223,7 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "sushi_chef-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_chef-deploy", tx); err != nil {
 		return err
 	}
 
@@ -193,7 +232,7 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "sushi_mint.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_mint", tx); err != nil {
 		return err
 	}
 
@@ -202,7 +241,7 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "sushi_chef-add.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_chef-add", tx); err != nil {
 		return err
 	}
 
@@ -215,24 +254,24 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "sushi_chef-set.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_chef-set", tx); err != nil {
 		return err
 	}
 
 	tx, err = sushiToken.Approve(root, chefAddr, amount)
-	if err = storeBlockResult(ctx, client, tx, "sushi_approve.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_approve", tx); err != nil {
 		return err
 	}
 
 	// deposit amount to chef
 	tx, err = chefToken.Deposit(root, pid, amount)
-	if err = storeBlockResult(ctx, client, tx, "sushi_chef-deposit.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_chef-deposit", tx); err != nil {
 		return err
 	}
 
 	// change sushiToken's owner to masterChef.
 	tx, err = sushiToken.TransferOwnership(root, chefAddr)
-	if err = storeBlockResult(ctx, client, tx, "sushi_transferOwnership.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_transferOwnership", tx); err != nil {
 		return err
 	}
 
@@ -243,7 +282,7 @@ func NewSushi(ctx context.Context, client *ethclient.Client, root *bind.Transact
 
 	// withdraw amount from chef
 	tx, err = chefToken.Withdraw(root, pid, res.Amount)
-	if err = storeBlockResult(ctx, client, tx, "sushi_chef-withdraw.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "sushi_chef-withdraw", tx); err != nil {
 		return err
 	}
 	return nil
@@ -254,7 +293,7 @@ func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "dao_deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "dao_deploy", tx); err != nil {
 		return err
 	}
 
@@ -262,7 +301,7 @@ func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "dao_gov-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "dao_gov-deploy", tx); err != nil {
 		return err
 	}
 
@@ -274,7 +313,7 @@ func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "dao_dao-Propose.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "dao_dao-Propose", tx); err != nil {
 		return err
 	}
 
@@ -283,7 +322,7 @@ func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "dao_dao-Cancel.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "dao_dao-Cancel", tx); err != nil {
 		return err
 	}
 
@@ -291,11 +330,11 @@ func NewDao(ctx context.Context, client *ethclient.Client, root, auth *bind.Tran
 }
 
 func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
-	wethAddr, tx, wToken, err := weth9.DeployWETH9(root, client)
+	wethAddr, tx, wethToken, err := weth9.DeployWETH9(root, client)
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_weth9-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_weth9-deploy", tx); err != nil {
 		return err
 	}
 
@@ -304,7 +343,7 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_factory-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_factory-deploy", tx); err != nil {
 		return err
 	}
 
@@ -313,33 +352,49 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_router-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_router-deploy", tx); err != nil {
 		return err
 	}
 
-	btcAddr, tx, btcToken, err := erc20.DeployERC20Template(root, client, auth.From, auth.From, "BTC coin", "BTC", 18)
+	btcAddr, tx, btcToken, err := erc20.DeployERC20Template(root, client, root.From, root.From, "BTC coin", "BTC", 18)
 	if err != nil {
 		return err
 	}
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_btc-deploy.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_btc-deploy", tx); err != nil {
 		return err
 	}
 
 	// init balance
-	auth.GasPrice = big.NewInt(1108583800)
-	auth.GasLimit = 1152900
 	originVal := big.NewInt(1).Mul(big.NewInt(3e3), utils.Ether)
-	tx, err = wToken.Deposit(auth)
-	tx, err = btcToken.Mint(auth, auth.From, originVal)
-	tx, err = wToken.Approve(auth, rAddr, originVal)
-	tx, err = btcToken.Approve(auth, rAddr, originVal)
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_initBalance.json"); err != nil {
+	auth.Value = originVal
+	tx0, err := wethToken.Deposit(auth)
+	if err != nil {
 		return err
 	}
+	auth.Value = nil
+	tx1, err := btcToken.Mint(root, auth.From, originVal)
+	if err != nil {
+		return err
+	}
+	tx2, err := wethToken.Approve(auth, rAddr, originVal)
+	if err != nil {
+		return err
+	}
+	tx3, err := btcToken.Approve(auth, rAddr, originVal)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_initBalance", []*types.Transaction{tx0, tx1, tx2, tx3}...); err != nil {
+		return err
+	}
+	bls, _ := wethToken.BalanceOf(nil, auth.From)
+	log.Info("weth balance", "balance", bls.String())
+	bls, _ = btcToken.BalanceOf(nil, auth.From)
+	log.Info("btc balance", "balance", bls.String())
 
 	// create pair
 	tx, err = fToken.CreatePair(root, wethAddr, btcAddr)
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_factory-createPair.json"); err != nil {
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_factory-createPair", tx); err != nil {
 		return err
 	}
 
@@ -356,7 +411,10 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 		auth.From,
 		big.NewInt(2e9),
 	)
-	if err = storeBlockResult(ctx, client, tx, "uniswapv2_router-AddLiquidity.json"); err != nil {
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, "uniswapv2_router-AddLiquidity", tx); err != nil {
 		return err
 	}
 
@@ -379,5 +437,5 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 		return err
 	}
 
-	return storeBlockResult(ctx, client, tx, "uniswapv2_router-swapExactTokensForTokens.json")
+	return storeBlockResultsForTxs(ctx, client, "uniswapv2_router-swapExactTokensForTokens", tx)
 }
