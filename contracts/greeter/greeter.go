@@ -30,30 +30,20 @@ var (
 
 // GreeterMetaData contains all meta data concerning the Greeter contract.
 var GreeterMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"retrieve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"retrieve_failing\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"set_value\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"set_value_failing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Sigs: map[string]string{
-		"2e64cec1": "retrieve()",
-		"f3417673": "retrieve_failing()",
-		"b0f2b72a": "set_value(uint256)",
-		"21848c46": "set_value_failing(uint256)",
-	},
-	Bin: "0x608060405234801561001057600080fd5b5060405161014238038061014283398101604081905261002f91610037565b600055610050565b60006020828403121561004957600080fd5b5051919050565b60e48061005e6000396000f3fe6080604052348015600f57600080fd5b506004361060465760003560e01c806321848c4614604b5780632e64cec114605c578063b0f2b72a146072578063f3417673146082575b600080fd5b605a60563660046096565b6088565b005b6000545b60405190815260200160405180910390f35b605a607d3660046096565b600055565b60606090565b600081815580fd5b60008080fd5b60006020828403121560a757600080fd5b503591905056fea26469706673582212204921de3d5e4e7973f5637bdad02a50aa0fabff6466686fd0fa8fe9561322333364736f6c634300080c0033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"foo\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561001057600080fd5b506104dc806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063c298557814610030575b600080fd5b61003861004e565b60405161004591906101a4565b60405180910390f35b60008060405161005d9061017c565b604051809103906000f080158015610079573d6000803e3d6000fd5b5090508073ffffffffffffffffffffffffffffffffffffffff1660016040516024016100a591906101a4565b6040516020818303038152906040527f6fae9412000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505060405161012f9190610230565b6000604051808303816000865af19150503d806000811461016c576040519150601f19603f3d011682016040523d82523d6000602084013e610171565b606091505b505050600191505090565b61025f8061024883390190565b60008115159050919050565b61019e81610189565b82525050565b60006020820190506101b96000830184610195565b92915050565b600081519050919050565b600081905092915050565b60005b838110156101f35780820151818401526020810190506101d8565b60008484015250505050565b600061020a826101bf565b61021481856101ca565b93506102248185602086016101d5565b80840191505092915050565b600061023c82846101ff565b91508190509291505056fe608060405234801561001057600080fd5b5061023f806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80636fae941214610030575b600080fd5b61004a60048036038101906100459190610103565b61004c565b005b604051610058906100ba565b604051809103906000f080158015610074573d6000803e3d6000fd5b505080156100b7576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016100ae9061018d565b60405180910390fd5b50565b605c806101ae83390190565b600080fd5b60008115159050919050565b6100e0816100cb565b81146100eb57600080fd5b50565b6000813590506100fd816100d7565b92915050565b600060208284031215610119576101186100c6565b5b6000610127848285016100ee565b91505092915050565b600082825260208201905092915050565b7f6173646661657766610000000000000000000000000000000000000000000000600082015250565b6000610177600983610130565b915061018282610141565b602082019050919050565b600060208201905081810360008301526101a68161016a565b905091905056fe6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212204730ca50114c96714346738c2194b94b09f64cd6675525b734b1f7e7f860e6f864736f6c63430008140033a2646970667358221220449158acf1e4b31d345a31ea11315e9db6dad8a125161291623e2ba172e755a864736f6c63430008140033a2646970667358221220e6b6ebe8af91e80df3e858c3192c8744912def2ebf46b9780c26d431ae57f35e64736f6c63430008140033",
 }
 
 // GreeterABI is the input ABI used to generate the binding from.
 // Deprecated: Use GreeterMetaData.ABI instead.
 var GreeterABI = GreeterMetaData.ABI
 
-// Deprecated: Use GreeterMetaData.Sigs instead.
-// GreeterFuncSigs maps the 4-byte function signature to its string representation.
-var GreeterFuncSigs = GreeterMetaData.Sigs
-
 // GreeterBin is the compiled bytecode used for deploying new contracts.
 // Deprecated: Use GreeterMetaData.Bin instead.
 var GreeterBin = GreeterMetaData.Bin
 
 // DeployGreeter deploys a new Ethereum contract, binding an instance of Greeter to it.
-func DeployGreeter(auth *bind.TransactOpts, backend bind.ContractBackend, num *big.Int) (common.Address, *types.Transaction, *Greeter, error) {
+func DeployGreeter(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Greeter, error) {
 	parsed, err := GreeterMetaData.GetAbi()
 	if err != nil {
 		return common.Address{}, nil, nil, err
@@ -62,7 +52,7 @@ func DeployGreeter(auth *bind.TransactOpts, backend bind.ContractBackend, num *b
 		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
 	}
 
-	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(GreeterBin), backend, num)
+	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(GreeterBin), backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -211,106 +201,23 @@ func (_Greeter *GreeterTransactorRaw) Transact(opts *bind.TransactOpts, method s
 	return _Greeter.Contract.contract.Transact(opts, method, params...)
 }
 
-// Retrieve is a free data retrieval call binding the contract method 0x2e64cec1.
+// Foo is a paid mutator transaction binding the contract method 0xc2985578.
 //
-// Solidity: function retrieve() view returns(uint256)
-func (_Greeter *GreeterCaller) Retrieve(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _Greeter.contract.Call(opts, &out, "retrieve")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+// Solidity: function foo() returns(bool)
+func (_Greeter *GreeterTransactor) Foo(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Greeter.contract.Transact(opts, "foo")
 }
 
-// Retrieve is a free data retrieval call binding the contract method 0x2e64cec1.
+// Foo is a paid mutator transaction binding the contract method 0xc2985578.
 //
-// Solidity: function retrieve() view returns(uint256)
-func (_Greeter *GreeterSession) Retrieve() (*big.Int, error) {
-	return _Greeter.Contract.Retrieve(&_Greeter.CallOpts)
+// Solidity: function foo() returns(bool)
+func (_Greeter *GreeterSession) Foo() (*types.Transaction, error) {
+	return _Greeter.Contract.Foo(&_Greeter.TransactOpts)
 }
 
-// Retrieve is a free data retrieval call binding the contract method 0x2e64cec1.
+// Foo is a paid mutator transaction binding the contract method 0xc2985578.
 //
-// Solidity: function retrieve() view returns(uint256)
-func (_Greeter *GreeterCallerSession) Retrieve() (*big.Int, error) {
-	return _Greeter.Contract.Retrieve(&_Greeter.CallOpts)
-}
-
-// RetrieveFailing is a free data retrieval call binding the contract method 0xf3417673.
-//
-// Solidity: function retrieve_failing() view returns(uint256)
-func (_Greeter *GreeterCaller) RetrieveFailing(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _Greeter.contract.Call(opts, &out, "retrieve_failing")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// RetrieveFailing is a free data retrieval call binding the contract method 0xf3417673.
-//
-// Solidity: function retrieve_failing() view returns(uint256)
-func (_Greeter *GreeterSession) RetrieveFailing() (*big.Int, error) {
-	return _Greeter.Contract.RetrieveFailing(&_Greeter.CallOpts)
-}
-
-// RetrieveFailing is a free data retrieval call binding the contract method 0xf3417673.
-//
-// Solidity: function retrieve_failing() view returns(uint256)
-func (_Greeter *GreeterCallerSession) RetrieveFailing() (*big.Int, error) {
-	return _Greeter.Contract.RetrieveFailing(&_Greeter.CallOpts)
-}
-
-// SetValue is a paid mutator transaction binding the contract method 0xb0f2b72a.
-//
-// Solidity: function set_value(uint256 num) returns()
-func (_Greeter *GreeterTransactor) SetValue(opts *bind.TransactOpts, num *big.Int) (*types.Transaction, error) {
-	return _Greeter.contract.Transact(opts, "set_value", num)
-}
-
-// SetValue is a paid mutator transaction binding the contract method 0xb0f2b72a.
-//
-// Solidity: function set_value(uint256 num) returns()
-func (_Greeter *GreeterSession) SetValue(num *big.Int) (*types.Transaction, error) {
-	return _Greeter.Contract.SetValue(&_Greeter.TransactOpts, num)
-}
-
-// SetValue is a paid mutator transaction binding the contract method 0xb0f2b72a.
-//
-// Solidity: function set_value(uint256 num) returns()
-func (_Greeter *GreeterTransactorSession) SetValue(num *big.Int) (*types.Transaction, error) {
-	return _Greeter.Contract.SetValue(&_Greeter.TransactOpts, num)
-}
-
-// SetValueFailing is a paid mutator transaction binding the contract method 0x21848c46.
-//
-// Solidity: function set_value_failing(uint256 num) returns()
-func (_Greeter *GreeterTransactor) SetValueFailing(opts *bind.TransactOpts, num *big.Int) (*types.Transaction, error) {
-	return _Greeter.contract.Transact(opts, "set_value_failing", num)
-}
-
-// SetValueFailing is a paid mutator transaction binding the contract method 0x21848c46.
-//
-// Solidity: function set_value_failing(uint256 num) returns()
-func (_Greeter *GreeterSession) SetValueFailing(num *big.Int) (*types.Transaction, error) {
-	return _Greeter.Contract.SetValueFailing(&_Greeter.TransactOpts, num)
-}
-
-// SetValueFailing is a paid mutator transaction binding the contract method 0x21848c46.
-//
-// Solidity: function set_value_failing(uint256 num) returns()
-func (_Greeter *GreeterTransactorSession) SetValueFailing(num *big.Int) (*types.Transaction, error) {
-	return _Greeter.Contract.SetValueFailing(&_Greeter.TransactOpts, num)
+// Solidity: function foo() returns(bool)
+func (_Greeter *GreeterTransactorSession) Foo() (*types.Transaction, error) {
+	return _Greeter.Contract.Foo(&_Greeter.TransactOpts)
 }
