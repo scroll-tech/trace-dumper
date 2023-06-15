@@ -15,3 +15,10 @@ start_docker:
 
 docker: ## Build integration-test image
 	docker build --no-cache -t trace-dumper/l2geth:latest ./docker/l2geth/.
+
+create_revert:
+	solc --bin contracts/greeter/Greeter.sol --overwrite -o ./output  --evm-version paris
+	solc --abi contracts/greeter/Greeter.sol --overwrite -o ./output --evm-version paris
+	./../go-ethereum/build/bin/abigen --abi ./output/Greeter.abi --bin ./output/Greeter.bin --pkg greeter --out contracts/greeter/greeter.go
+	make trace_dumper
+	./bin/trace_dumper -dump greeter

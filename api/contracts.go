@@ -174,7 +174,12 @@ func NewERC20(ctx context.Context, client *ethclient.Client, root, auth *bind.Tr
 }
 
 func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.TransactOpts) error {
-	_, tx, token, err := greeter.DeployGreeter(root, client, big.NewInt(10))
+	// log.Error("asdfawef", "ctx", ctx);
+	// log.Error("asdfawef", "ctx", client);
+	// log.Error("asdfawef", "ctx", root);
+	_, tx, token, err := greeter.DeployGreeter(root, client)
+	root.GasLimit = 1000000;
+	// log.Error("asdfawef", "ctx", root);
 	if err != nil {
 		return err
 	}
@@ -184,11 +189,12 @@ func NewGreeter(ctx context.Context, client *ethclient.Client, root *bind.Transa
 		return err
 	}
 
-	tx, err = token.SetValue(root, big.NewInt(10))
+	tx, err = token.Foo(root);
+	log.Error("new greeter", "tx.Gas()", tx.Gas());
 	if err != nil {
 		return err
 	}
-	return storeBlockResultsForTxs(ctx, client, path, "setValue", tx)
+	return storeBlockResultsForTxs(ctx, client, path, "foo", tx)
 }
 
 func NewNft(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
