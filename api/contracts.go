@@ -444,17 +444,20 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	}
 
 	// swap weth => btc
-	swapVal := utils.Ether
-	tx, err = rToken.SwapExactTokensForTokens(
-		auth,
-		swapVal,
-		big.NewInt(0),
-		[]common.Address{wethAddr, btcAddr},
-		auth.From,
-		big.NewInt(int64(header.Time)*2),
-	)
-	if err != nil {
-		return err
+	// swapVal := utils.Ether
+	swapVal := big.NewInt(1e15)
+	for i := 0; i < 100; i++ {
+		tx, err = rToken.SwapExactTokensForTokens(
+			auth,
+			swapVal,
+			big.NewInt(0),
+			[]common.Address{wethAddr, btcAddr},
+			auth.From,
+			big.NewInt(int64(header.Time)*2),
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return storeBlockResultsForTxs(ctx, client, path, "router-swapExactTokensForTokens", tx)
