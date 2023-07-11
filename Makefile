@@ -4,6 +4,7 @@ VERSION=scroll-v4.2.8-temp
 
 update: ## Let's keep it and docker version in consistent.
 	go get -u github.com/scroll-tech/go-ethereum@${VERSION}
+	go mod tidy
 
 trace_dumper: ## Builds the trace_dumper instance.
 	mkdir -p ${PWD}/bin
