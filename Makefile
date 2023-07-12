@@ -27,3 +27,4 @@ trace_data:
 	./bin/trace_dumper -dump sushi
 	./bin/trace_dumper -dump dao
 	./bin/trace_dumper -dump uniswapv2
+	./bin/trace_dumper -dump multi_uniswapv2
