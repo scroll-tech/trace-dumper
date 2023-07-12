@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -63,7 +62,7 @@ func getTxsBlockNumbers(ctx context.Context, client *ethclient.Client, file stri
 			return nil, err
 		}
 		if receipt.Status != types.ReceiptStatusSuccessful {
-			return nil, errors.New("receipt status is fail")
+			return nil, fmt.Errorf("receipt status is fail. receipt.BlockNumber.Uint64(): %d", receipt.BlockNumber.Uint64())
 		}
 		if preNumber != nil && preNumber.Uint64() == receipt.BlockNumber.Uint64() {
 			continue
@@ -447,11 +446,11 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 	}
 
 	// swap weth => btc
-	// swapVal := utils.Ether
-	swapVal := big.NewInt(1e15)
-	txs := make([]*types.Transaction, 0, 100)
+	swapVal := big.NewInt(1e15) // 0.001 utils.Ether
+	times:=100
 	auth.GasLimit = 1000000
-	for i := 0; i < 100; i++ {
+	var txs = make([]*types.Transaction, 0, times)
+	for i := 0; i < times; i++ {
 		tx, err = rToken.SwapExactTokensForTokens(
 			auth,
 			swapVal,
@@ -463,17 +462,9 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 		if err != nil {
 			return err
 		}
+
 		txs = append(txs, tx)
 	}
-	for i, tx := range txs {
-		receipt, err := bind.WaitMined(ctx, client, tx)
-		if err != nil {
-			return err
-		}
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			log.Error("tx status is not right", "index", i, "txHash", tx.Hash().String())
-		}
-	}
 
-	return storeBlockResultsForTxs(ctx, client, path, "router-swapExactTokensForTokens", tx)
+	return storeBlockResultsForTxs(ctx, client, path, "router-swapExactTokensForTokens", txs...)
 }
