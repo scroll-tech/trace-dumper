@@ -447,8 +447,125 @@ func NewUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bin
 
 	// swap weth => btc
 	swapVal := big.NewInt(1e15) // 0.001 utils.Ether
-	times:=100
 	auth.GasLimit = 1000000
+	tx, err = rToken.SwapExactTokensForTokens(
+		auth,
+		swapVal,
+		big.NewInt(0),
+		[]common.Address{wethAddr, btcAddr},
+		auth.From,
+		big.NewInt(int64(header.Time)*2),
+	)
+	if err != nil {
+		return err
+	}
+
+	return storeBlockResultsForTxs(ctx, client, path, "router-swapExactTokensForTokens", tx)
+}
+
+func NewMultiUniswapv2(ctx context.Context, client *ethclient.Client, root, auth *bind.TransactOpts) error {
+	root.GasLimit = 5000000
+	auth.GasLimit = 5000000
+
+	wethAddr, tx, wethToken, err := weth9.DeployWETH9(root, client)
+	if err != nil {
+		return err
+	}
+
+	path := TRACEDATA_DIR_PREFIX + "multi_uniswapv2"
+	if err = storeBlockResultsForTxs(ctx, client, path, "deploy-weth9", tx); err != nil {
+		return err
+	}
+
+	// deploy factory
+	fAddr, tx, fToken, err := factory.DeployUniswapV2Factory(root, client, root.From)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, path, "deploy-factory", tx); err != nil {
+		return err
+	}
+
+	// deploy router
+	rAddr, tx, rToken, err := router.DeployUniswapV2Router02(root, client, fAddr, wethAddr)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, path, "deploy-router", tx); err != nil {
+		return err
+	}
+
+	btcAddr, tx, btcToken, err := erc20.DeployERC20Template(root, client, root.From, root.From, "BTC coin", "BTC", 18)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, path, "deploy-btc", tx); err != nil {
+		return err
+	}
+
+	// init balance
+	originVal := big.NewInt(1).Mul(big.NewInt(3e3), utils.Ether)
+	auth.Value = originVal
+	tx0, err := wethToken.Deposit(auth)
+	if err != nil {
+		return err
+	}
+	auth.Value = nil
+	tx1, err := btcToken.Mint(root, auth.From, originVal)
+	if err != nil {
+		return err
+	}
+	tx2, err := wethToken.Approve(auth, rAddr, originVal)
+	if err != nil {
+		return err
+	}
+	tx3, err := btcToken.Approve(auth, rAddr, originVal)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, path, "token-initBalance", []*types.Transaction{tx0, tx1, tx2, tx3}...); err != nil {
+		return err
+	}
+	bls, _ := wethToken.BalanceOf(nil, auth.From)
+	log.Info("weth balance", "balance", bls.String())
+	bls, _ = btcToken.BalanceOf(nil, auth.From)
+	log.Info("btc balance", "balance", bls.String())
+
+	// create pair
+	tx, err = fToken.CreatePair(root, wethAddr, btcAddr)
+	if err = storeBlockResultsForTxs(ctx, client, path, "factory-createPair", tx); err != nil {
+		return err
+	}
+
+	// add liquidity, pool is 1:1
+	liqVal := big.NewInt(1).Mul(big.NewInt(1e3), utils.Ether)
+	tx, err = rToken.AddLiquidity(
+		auth,
+		wethAddr,
+		btcAddr,
+		liqVal,
+		liqVal,
+		big.NewInt(0),
+		big.NewInt(0),
+		auth.From,
+		big.NewInt(2e9),
+	)
+	if err != nil {
+		return err
+	}
+	if err = storeBlockResultsForTxs(ctx, client, path, "router-AddLiquidity", tx); err != nil {
+		return err
+	}
+
+	header, err := client.HeaderByNumber(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// swap weth => btc
+	swapVal := big.NewInt(1e15) // 0.001 utils.Ether
+	auth.GasLimit = 1000000
+	times := 100
 	var txs = make([]*types.Transaction, 0, times)
 	for i := 0; i < times; i++ {
 		tx, err = rToken.SwapExactTokensForTokens(
