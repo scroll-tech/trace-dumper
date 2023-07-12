@@ -34,8 +34,9 @@ const (
 	DaoName  = SolType("dao")
 
 	// uniswapv2 contracts
-	Uniswapv2Name = SolType("uniswapv2")
-	FactoryName   = SolType("factory")
-	RouterName    = SolType("router")
-	MulticallName = SolType("multicall")
+	Uniswapv2Name      = SolType("uniswapv2")
+	MultiUniswapv2Name = SolType("multi_uniswapv2")
+	FactoryName        = SolType("factory")
+	RouterName         = SolType("router")
+	MulticallName      = SolType("multicall")
 )
