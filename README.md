@@ -34,7 +34,7 @@ make trace_dumper
 ./bin/trace_dumper --help
 
 # without `-wrap` get the origin result from sdk.
-./bin/trace_dumper -dump erc20 # options: erc20, native, nft, greeter, sushi, dao, uniswapv2
+./bin/trace_dumper -dump erc20 # options: erc20, native, nft, greeter, sushi, dao, uniswapv2, multi_uniswapv2
 
 # `-wrap` add json rpc wrap, in order to get the same struct when called by postman.
 ./bin/trace_dumper -dump erc20 -wrap
