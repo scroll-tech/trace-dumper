@@ -81,7 +81,7 @@ func storeBlockResultsForBlocks(ctx context.Context, client *ethclient.Client, p
 		if err != nil {
 			return err
 		}
-		data, err := json.MarshalIndent(trace, "", "    ")
+		data, err := json.Marshal(trace)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func storeBlockResultsForBlocks(ctx context.Context, client *ethclient.Client, p
 				ID:      1,
 				Result:  wrapData,
 			}
-			data, err = json.MarshalIndent(wrapJson, "", "    ")
+			data, err = json.Marshal(wrapJson)
 			if err != nil {
 				return err
 			}
