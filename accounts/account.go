@@ -1,11 +1,9 @@
 package accounts
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"math/big"
-	"os"
 	"sync"
 
 	"github.com/scroll-tech/go-ethereum/accounts/abi/bind"
@@ -92,23 +90,19 @@ type Accounts struct {
 	accsCh chan *bind.TransactOpts
 }
 
-func NewAccounts(ctx context.Context, limit int, client *ethclient.Client, keystore, password string) (*Accounts, error) {
+func NewAccounts(ctx context.Context, limit int, client *ethclient.Client, sk *ecdsa.PrivateKey) (*Accounts, error) {
 	// Set useful internal accounts.
 	if len(AddrPrivs) > limit {
 		AddrPrivs = AddrPrivs[:limit]
 	}
 
-	data, err := os.ReadFile(keystore)
-	if err != nil {
-		return nil, err
-	}
 	// get chainID from l2geth handler
-	chainid, err := client.ChainID(ctx)
+	chainID, err := client.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	auth, err := bind.NewTransactorWithChainID(bytes.NewBuffer(data), password, chainid)
+	auth, err := bind.NewKeyedTransactorWithChainID(sk, chainID) //bind.NewTransactorWithChainID(bytes.NewBuffer(data), password, chainid)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +110,7 @@ func NewAccounts(ctx context.Context, limit int, client *ethclient.Client, keyst
 
 	var accounts []*bind.TransactOpts
 	for _, acc := range AddrPrivs {
-		acc, err := bind.NewKeyedTransactorWithChainID(acc.PrivateKey, chainid)
+		acc, err := bind.NewKeyedTransactorWithChainID(acc.PrivateKey, chainID)
 		if err != nil {
 			return nil, err
 		}

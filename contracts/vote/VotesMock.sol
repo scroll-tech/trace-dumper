@@ -1,6 +1,5 @@
 // File: contracts/utils/Context.sol
 
-// SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
 pragma solidity ^0.8.0;
@@ -27,7 +26,7 @@ abstract contract Context {
 
 // File: contracts/utils/Counters.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Counters.sol)
 
 pragma solidity ^0.8.0;
@@ -73,7 +72,7 @@ library Counters {
 
 // File: contracts/utils/math/Math.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (utils/math/Math.sol)
 
 pragma solidity ^0.8.0;
@@ -302,7 +301,7 @@ library Math {
 
 // File: contracts/utils/math/SafeCast.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.4.1) (utils/math/SafeCast.sol)
 
 pragma solidity ^0.8.0;
@@ -1440,7 +1439,7 @@ library SafeCast {
 
 // File: contracts/utils/Checkpoints.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (utils/Checkpoints.sol)
 pragma solidity ^0.8.0;
 
@@ -1527,7 +1526,7 @@ library Checkpoints {
 
 // File: contracts/utils/Strings.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 
 pragma solidity ^0.8.0;
@@ -1605,7 +1604,7 @@ library Strings {
 
 // File: contracts/utils/cryptography/ECDSA.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (utils/cryptography/ECDSA.sol)
 
 pragma solidity ^0.8.0;
@@ -1838,7 +1837,7 @@ library ECDSA {
 
 // File: contracts/utils/cryptography/draft-EIP712.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/cryptography/draft-EIP712.sol)
 
 pragma solidity ^0.8.0;
@@ -1943,7 +1942,7 @@ abstract contract EIP712 {
 
 // File: contracts/governance/utils/IVotes.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (governance/utils/IVotes.sol)
 pragma solidity ^0.8.0;
 
@@ -2007,7 +2006,7 @@ interface IVotes {
 
 // File: contracts/governance/utils/Votes.sol
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.6.0) (governance/utils/Votes.sol)
 pragma solidity ^0.8.0;
 
@@ -2219,7 +2218,7 @@ abstract contract Votes is IVotes, Context, EIP712 {
 
 // File: contracts/mocks/VotesMock.sol
 
-// SPDX-License-Identifier: MIT
+
 
 pragma solidity ^0.8.0;
 

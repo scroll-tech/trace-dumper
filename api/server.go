@@ -39,4 +39,6 @@ const (
 	FactoryName        = SolType("factory")
 	RouterName         = SolType("router")
 	MulticallName      = SolType("multicall")
+
+	BridgeName = SolType("bridge")
 )
