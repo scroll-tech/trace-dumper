@@ -1,4 +1,4 @@
-.PHONY: update trace_dumper geth clean docker start_docker trace_data
+.PHONY: update trace_dumper clean docker start_docker trace_data
 
 VERSION=scroll-v5.2.0
 
