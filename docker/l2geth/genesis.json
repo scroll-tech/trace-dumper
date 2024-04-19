@@ -12,21 +12,26 @@
     "istanbulBlock": 0,
     "berlinBlock": 0,
     "londonBlock": 0,
+    "archimedesBlock": 0,
     "shanghaiBlock": 0,
+    "bernoulliBlock": 0,
     "clique": {
       "period": 3,
       "epoch": 30000
     },
     "scroll": {
       "useZktrie": true,
-      "maxTxPerBlock": 44,
-      "feeVaultAddress": "0x5300000000000000000000000000000000000005"
+      "maxTxPerBlock": 100,
+      "maxTxPayloadBytesPerBlock": 122880,
+      "feeVaultAddress": "0x5300000000000000000000000000000000000005",
+      "enableEIP2718": false,
+      "enableEIP1559": false
     }
   },
   "nonce": "0x0",
   "timestamp": "0x61bc34a0",
   "extraData": "0x00000000000000000000000000000000000000000000000000000000000000001c5a77d9fa7ef466951b2f01f724bca3a5820b630000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-  "gasLimit": "0x7a1200",
+  "gasLimit": "10000000",
   "difficulty": "0x1",
   "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "coinbase": "0x0000000000000000000000000000000000000000",
