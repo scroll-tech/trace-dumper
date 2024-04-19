@@ -2,6 +2,12 @@ FROM scrolltech/l2geth:scroll-v4.4.6
 
 RUN mkdir -p /l2geth/keystore
 
+ENV RUST_LOG="info"
+
+# TODO: fix this to use the correct chain id
+ENV CHAIN_ID=534351
+
+
 COPY password /l2geth/
 COPY genesis.json /l2geth/
 COPY genesis-keystore /l2geth/

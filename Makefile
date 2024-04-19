@@ -17,7 +17,8 @@ start_docker:
 	docker run --rm -p 8545:8545 -p 8546:8546 trace-dumper/l2geth:${VERSION}
 
 docker: ## Build integration-test image
-	docker build --no-cache -t trace-dumper/l2geth:${VERSION} ./docker/l2geth/.
+	docker build --platform linux/x86_64 --no-cache -t trace-dumper/l2geth:${VERSION} ./docker/l2geth/.
+	docker tag trace-dumper/l2geth:${VERSION} trace-dumper/l2geth:latest
 
 trace_data:
 	./bin/trace_dumper -dump erc20
