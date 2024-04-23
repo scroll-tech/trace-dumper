@@ -70,7 +70,7 @@ func getTxsBlockNumbers(ctx context.Context, client *ethclient.Client, file stri
 		preNumber = receipt.BlockNumber
 		numberList = append(numberList, receipt.BlockNumber)
 
-		log.Info(file, "number", receipt.BlockNumber.Uint64(), "txHash", tx.Hash().String())
+		log.Info(file, "BlockNumber", receipt.BlockNumber.Uint64(), "txHash", tx.Hash().String())
 	}
 	return numberList, nil
 }
