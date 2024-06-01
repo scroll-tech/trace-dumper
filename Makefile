@@ -1,6 +1,6 @@
 .PHONY: update trace_dumper clean docker start_docker trace_data
 
-VERSION=cd4f8ab
+VERSION=scroll-v5.3.24
 
 update: ## Let's keep it and docker version in consistent.
 	go get -u github.com/scroll-tech/go-ethereum@${VERSION}
