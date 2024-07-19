@@ -15,4 +15,5 @@ exec geth --mine --datadir "." --unlock 0 --password "./password" --allow-insecu
   --http --http.addr "0.0.0.0" --http.port 8545 --http.api "eth,scroll,net,web3,debug" \
   --ws --ws.addr "0.0.0.0" --ws.port 8546 --ws.api "eth,scroll,net,web3,debug" \
   --gcmode archive \
-  --trace.mptwitness 2
+  --syncmode full \
+  --miner.etherbase 0x1c5a77d9fa7ef466951b2f01f724bca3a5820b63
