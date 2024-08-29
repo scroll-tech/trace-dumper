@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/mattn/go-colorable"
-	"github.com/mattn/go-isatty"
-	"github.com/scroll-tech/go-ethereum/ethclient"
-	"github.com/scroll-tech/go-ethereum/log"
 	"io"
 	"math/big"
 	"os"
 	"tool/accounts"
 	"tool/api"
+
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
+	"github.com/scroll-tech/go-ethereum/ethclient"
+	"github.com/scroll-tech/go-ethereum/log"
 )
 
 var (
